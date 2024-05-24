@@ -8,4 +8,7 @@ fn main() {
     let lz = LZSS::new(4,4);
     lz.compress(EXAMPLE.to_vec());
     //lz.compress(LONGEXAMPLE.to_vec());
+    //
+
+
 }

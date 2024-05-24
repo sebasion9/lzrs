@@ -1,3 +1,6 @@
+#[derive(Debug, PartialEq)]
+pub struct Pair { offset : usize, len : usize }
+impl Pair { pub fn new(offset : usize, len : usize) -> Self {  Self { offset, len } }}
 pub struct LZSS {
     hist_size : u32,
     win_size : u32
@@ -12,30 +15,38 @@ impl LZSS {
         // SLIDING WINDOW && HISTORY WINDOW
         // IF left < hist_size, -> tmp buffer containing input[0] and lookup there
         // ELSE his win is just left - hist_size, so input[left - hist_size]..input[left]
+
+
         let mut tmp_his_buf : Vec<u8> = self.init_tmp_hisbuf(input[0]);
         let mut right = self.win_size as usize;
-        for left in 0..(input.len() - right + 1) {
+        for mut left in 0..(input.len() - right + 1) {
 
+            // SLIDING WIN
+            let win_slice : &[u8] = &input[left..right];
+
+            // HIST WIN
+            let mut his_slice : &[u8];
             if left < self.hist_size as usize {
                 if left != 0 {
                     LZSS::buf_shift_left_and_insert(&mut tmp_his_buf, vec![input[left - 1]]);
                 }
-                print!("step: {}, history: {:?}", left, String::from_utf8(tmp_his_buf.iter().map(|c| {*c as u8}).collect::<Vec<u8>>()).expect("should be ascii"));
+                his_slice = &tmp_his_buf;
             }
             else {
-                print!("step: {}, history: ", left);
-                for i in (left - self.hist_size as usize)..left {
-                    print!("{} ", input[i] as char);
-                }
+                his_slice = &input[left - self.hist_size as usize..left];
             }
 
-            let mut ptr = left.clone();
-            print!("step: {}, sliding: ", left);
-            while ptr < right {
-                print!("{} ", input[ptr] as char);
-                ptr += 1;
-            }
-            println!("");
+            // DBG
+
+            println!("step: {}, history: {:?}, sliding: {:?}",left, 
+                     his_slice
+                     .iter()
+                     .map(|c| { *c as char })
+                     .collect::<Vec<char>>(),
+                     win_slice
+                     .iter()
+                     .map(|c| { *c as char })
+                     .collect::<Vec<char>>());
             right += 1;
         }
     }
@@ -59,5 +70,38 @@ impl LZSS {
         }
         vec
     }
+    pub fn max_sub(input : &[u8], sub : &[u8]) -> Option<Pair> {
+        let mut max = 0;
+        let mut idx = 0;
+        for i in 0..input.len() {
+            for j in 0..sub.len() {
+                let mut offset = 0;
+                'inner: while input[i + offset] == sub[j + offset] {
+                    offset += 1;
+                    if offset > max {
+                        max = offset;
+                        idx = i;
+                    }
+                    if offset + i >= input.len() || offset + j >= sub.len() {
+                        break 'inner;
+                    }
+                }
+            }
+        }
+        if max > 0 {
+            return Some(Pair::new(idx, max))
+        }
+        return None
+    }
 }
+
+
+
+
+
+
+
+
+
+
 
