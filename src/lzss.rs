@@ -16,19 +16,26 @@ impl LZSS {
         // IF left < hist_size, -> tmp buffer containing input[0] and lookup there
         // ELSE his win is just left - hist_size, so input[left - hist_size]..input[left]
 
+        println!("input: {:?}", input
+                 .iter()
+                 .map(|c| {*c as char})
+                 .collect::<Vec<char>>());
 
         let mut tmp_his_buf : Vec<u8> = self.init_tmp_hisbuf(input[0]);
         let mut right = self.win_size as usize;
-        for mut left in 0..(input.len() - right + 1) {
-
+        let mut len = 1;
+        let mut left = 0;
+        while left < (input.len()) {
             // SLIDING WIN
             let win_slice : &[u8] = &input[left..right];
+            let dbg_idx = left;
 
             // HIST WIN
             let mut his_slice : &[u8];
             if left < self.hist_size as usize {
                 if left != 0 {
-                    LZSS::buf_shift_left_and_insert(&mut tmp_his_buf, vec![input[left - 1]]);
+                    let shift_slice = &input[(left - len)..left];
+                    LZSS::buf_shift_left_and_insert(&mut tmp_his_buf, shift_slice.to_vec());
                 }
                 his_slice = &tmp_his_buf;
             }
@@ -36,9 +43,20 @@ impl LZSS {
                 his_slice = &input[left - self.hist_size as usize..left];
             }
 
+            // for now, if None returned, just go slide 1 byte
+            if let Some(pair) = LZSS::max_sub(his_slice, win_slice) {
+                len = pair.len;
+            }
+            else {
+                len = 1;
+            }
+            left += len;
+            right = left + self.win_size as usize;
+            if right > input.len() {
+                right = input.len();
+            }
             // DBG
-
-            println!("step: {}, history: {:?}, sliding: {:?}",left, 
+            println!("step: {}, history: {:?}, sliding: {:?}",dbg_idx, 
                      his_slice
                      .iter()
                      .map(|c| { *c as char })
@@ -47,8 +65,9 @@ impl LZSS {
                      .iter()
                      .map(|c| { *c as char })
                      .collect::<Vec<char>>());
-            right += 1;
         }
+
+
     }
 
     pub fn decompress(&self, input : Vec<u8>) {
@@ -74,17 +93,15 @@ impl LZSS {
         let mut max = 0;
         let mut idx = 0;
         for i in 0..input.len() {
-            for j in 0..sub.len() {
-                let mut offset = 0;
-                'inner: while input[i + offset] == sub[j + offset] {
-                    offset += 1;
-                    if offset > max {
-                        max = offset;
-                        idx = i;
-                    }
-                    if offset + i >= input.len() || offset + j >= sub.len() {
-                        break 'inner;
-                    }
+            let mut offset = 0;
+            'inner: while input[i + offset] == sub[offset] {
+                offset += 1;
+                if offset > max {
+                    max = offset;
+                    idx = i;
+                }
+                if offset + i >= input.len() || offset >= sub.len() {
+                    break 'inner;
                 }
             }
         }

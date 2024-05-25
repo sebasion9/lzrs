@@ -47,6 +47,9 @@ mod tests {
         let t11: &[u8] = b"commonprefix";
         let t12: &[u8] = b"commonpostfix";
 
+        let t13: &[u8] = b"abbc";
+        let t14: &[u8] = b"ab";
+
 
         let res1 = LZSS::max_sub(&t1, &t2);
         let res2 = LZSS::max_sub(&t3, &t4);
@@ -54,12 +57,14 @@ mod tests {
         let res4 = LZSS::max_sub(&t7, &t8);
         let res5 = LZSS::max_sub(&t9, &t10);
         let res6 = LZSS::max_sub(&t11, &t12);
+        let res7 = LZSS::max_sub(&t13, &t14);
 
         assert_eq!(res1, Some(Pair::new(2, 3)));
-        assert_eq!(res2, Some(Pair::new(0, 6)));
-        assert_eq!(res3, Some(Pair::new(2, 6)));
-        assert_eq!(res4, Some(Pair::new(0, 4)));
-        assert_eq!(res5, Some(Pair::new(0, 5)));
+        assert_eq!(res2, Some(Pair::new(0, 4)));
+        assert_eq!(res3, Some(Pair::new(8,1)));
+        assert_eq!(res4, Some(Pair::new(4, 3)));
+        assert_eq!(res5, Some(Pair::new(6, 4)));
         assert_eq!(res6, Some(Pair::new(0, 7)));
+        assert_eq!(res7, Some(Pair::new(0, 2)));
     }
 }
